@@ -23,6 +23,7 @@ services:
     container_name: business_api_app
     volumes:
       - .:/app
+      - bundle_cache:/usr/local/bundle
     ports:
       - "3000:3000"
     depends_on:
@@ -34,3 +35,4 @@ services:
 
 volumes:
   postgres_data:
+  bundle_cache:
