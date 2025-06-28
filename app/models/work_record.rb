@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class WorkRecord < ApplicationRecord
   # 統一バリデーションシステムを使用
   include Validatable
@@ -50,8 +52,6 @@ class WorkRecord < ApplicationRecord
     emergency: 3      # 緊急対応
   }, prefix: :type
 
-
-
   # ========================================
   # スコープ定義（よく使う検索条件）
   # ========================================
@@ -72,23 +72,23 @@ class WorkRecord < ApplicationRecord
   scope :by_staff, ->(staff) { where(staff_user: staff) }
 
   # 指定期間の作業記録（開始日〜終了日）
-  scope :in_period, ->(start_date, end_date) {
+  scope :in_period, lambda { |start_date, end_date|
     where(work_date: start_date.beginning_of_day..end_date.end_of_day)
   }
 
   # 今月の作業記録
-  scope :this_month, -> {
-    where(work_date: Time.current.beginning_of_month..Time.current.end_of_month)
+  scope :this_month, lambda {
+    where(work_date: Time.current.all_month)
   }
 
   # 先月の作業記録
-  scope :last_month, -> {
-    where(work_date: 1.month.ago.beginning_of_month..1.month.ago.end_of_month)
+  scope :last_month, lambda {
+    where(work_date: 1.month.ago.all_month)
   }
 
   # 今週の作業記録
-  scope :this_week, -> {
-    where(work_date: Time.current.beginning_of_week..Time.current.end_of_week)
+  scope :this_week, lambda {
+    where(work_date: Time.current.all_week)
   }
 
   # 完了済みの作業記録のみ
@@ -165,6 +165,7 @@ class WorkRecord < ApplicationRecord
   #   work_record.duration_hours # => 2.5（2時間30分）
   def duration_hours
     return 0.0 unless completed_at && created_at
+
     ((completed_at - created_at) / 1.hour).round(2)
   end
 
@@ -191,7 +192,8 @@ class WorkRecord < ApplicationRecord
       content: content,
       work_date: work_date.strftime('%Y-%m-%d'),
       work_type: work_type,
-      work_type_display: I18n.t("activerecord.attributes.work_record.work_types.#{work_type}", default: work_type.humanize),
+      work_type_display: I18n.t("activerecord.attributes.work_record.work_types.#{work_type}",
+                                default: work_type.humanize),
       status: status,
       status_display: I18n.t("activerecord.attributes.work_record.statuses.#{status}", default: status.humanize),
       duration_hours: duration_hours,
@@ -270,7 +272,8 @@ class WorkRecord < ApplicationRecord
         .map do |work_type, count|
         {
           work_type: work_type,
-          display_name: I18n.t("activerecord.attributes.work_record.work_types.#{work_type}", default: work_type.humanize),
+          display_name: I18n.t("activerecord.attributes.work_record.work_types.#{work_type}",
+                               default: work_type.humanize),
           count: count
         }
       end
@@ -323,11 +326,11 @@ class WorkRecord < ApplicationRecord
 
   # 作業完了時の通知処理
   def notify_completion
-    if status_completed? && status_previously_was != 'completed'
-      # ここで通知サービスを呼び出し
-      # NotificationService.notify_work_completed(self)
-      Rails.logger.info "作業完了通知: #{summary}"
-    end
+    return unless status_completed? && status_previously_was != 'completed'
+
+    # ここで通知サービスを呼び出し
+    # NotificationService.notify_work_completed(self)
+    Rails.logger.info "作業完了通知: #{summary}"
   end
 end
 
@@ -335,46 +338,44 @@ end
 # 使用例とテストコマンド
 # ========================================
 
-=begin
-
+#
 # Rails Console での動作確認コマンド
-
+#
 # 1. 基本的な作業記録作成
-customer = Customer.first
-staff = User.first
-department = Department.first
-
-work_record = WorkRecord.create!(
-  customer: customer,
-  staff_user: staff,
-  department: department,
-  content: "顧客からの問い合わせ対応",
-  work_date: Date.current,
-  work_type: :consultation
-)
-
+# customer = Customer.first
+# staff = User.first
+# department = Department.first
+#
+# work_record = WorkRecord.create!(
+#   customer: customer,
+#   staff_user: staff,
+#   department: department,
+#   content: "顧客からの問い合わせ対応",
+#   work_date: Date.current,
+#   work_type: :consultation
+# )
+#
 # 2. 作業記録の検索・フィルタリング
-WorkRecord.recent.limit(10)
-WorkRecord.by_department(department)
-WorkRecord.this_month.emergency_works
-WorkRecord.completed_works.by_staff(staff)
-
+# WorkRecord.recent.limit(10)
+# WorkRecord.by_department(department)
+# WorkRecord.this_month.emergency_works
+# WorkRecord.completed_works.by_staff(staff)
+#
 # 3. 統計データの取得
-WorkRecord.statistics_for_period(1.month.ago, Date.current)
-WorkRecord.workload_analysis(staff, 30)
-WorkRecord.popular_work_types(5)
-WorkRecord.efficiency_by_department
-
+# WorkRecord.statistics_for_period(1.month.ago, Date.current)
+# WorkRecord.workload_analysis(staff, 30)
+# WorkRecord.popular_work_types(5)
+# WorkRecord.efficiency_by_department
+#
 # 4. 作業状態の変更
-work_record.mark_as_completed!
-work_record.mark_as_on_hold!("顧客都合により一時保留")
-work_record.resume!
-
+# work_record.mark_as_completed!
+# work_record.mark_as_on_hold!("顧客都合により一時保留")
+# work_record.resume!
+#
 # 5. API用データの生成
-work_record.as_json_for_api
-
+# work_record.as_json_for_api
+#
 # 6. 関連データの取得（through関連の活用）
-customer.assigned_users.distinct  # この顧客の担当スタッフ一覧
-staff.assigned_customers.distinct # このスタッフの担当顧客一覧
-
-=end
+# customer.assigned_users.distinct  # この顧客の担当スタッフ一覧
+# staff.assigned_customers.distinct # このスタッフの担当顧客一覧
+#

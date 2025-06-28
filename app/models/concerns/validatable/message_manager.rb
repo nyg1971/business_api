@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Validatable
   class MessageManager
     class << self
@@ -53,9 +55,9 @@ module Validatable
       #   # email                    : "の形式が正しくありません（例：user@example.com）"
       #   # ...
       def list_all_messages(locale = I18n.locale)
-        puts "=== バリデーションメッセージ一覧 (#{locale}) ==="
+        Rails.logger.debug { "=== バリデーションメッセージ一覧 (#{locale}) ===" }
         load_messages(locale).each do |key, message|
-          puts "#{key.ljust(25)}: \"#{message}\""
+          Rails.logger.debug "#{key.ljust(25)}: \"#{message}\""
         end
       end
 
@@ -65,10 +67,10 @@ module Validatable
       #   MessageManager.available_locales
       #   # => ["validation_messages", "en", "ja", "zh"]
       def available_locales
-        Dir.glob(Rails.root.join('config', 'validation_messages', '*.yml'))
-           .map { |path| File.basename(path, '.yml') }
-           .concat(['validation_messages'])
-           .uniq
+        Rails.root.glob('config/validation_messages/*.yml')
+             .map { |path| File.basename(path, '.yml') }
+             .push('validation_messages')
+             .uniq
       end
 
       private
@@ -84,14 +86,14 @@ module Validatable
       def load_messages_from_file(locale)
         # 多言語ファイルを優先
         locale_file = Rails.root.join('config', 'validation_messages', "#{locale}.yml")
-        default_file = Rails.root.join('config', 'validation_messages.yml')
+        default_file = Rails.root.join('config/validation_messages.yml')
 
         file_to_load = File.exist?(locale_file) ? locale_file : default_file
 
         begin
           config = YAML.load_file(file_to_load)
           config['validation_messages'] || {}
-        rescue => e
+        rescue StandardError => e
           Rails.logger.warn "メッセージファイル読み込み失敗: #{file_to_load} - #{e.message}"
           {}
         end

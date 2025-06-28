@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Customer < ApplicationRecord
   # 担当スタッフ一覧（WorkRecord経由でUser取得）
   # @!attribute [r] assigned_users
@@ -5,7 +7,7 @@ class Customer < ApplicationRecord
   # === アソシエーション（関連設定） ===
   belongs_to :department                        # 必須：顧客は必ず部署に所属する
   has_many :work_records, dependent: :destroy   # 顧客削除時に関連する作業記録も削除
-  has_many :assigned_users, through: :work_records, source: :staff_user  # 担当スタッフの一覧を取得
+  has_many :assigned_users, through: :work_records, source: :staff_user # 担当スタッフの一覧を取得
 
   # === バリデーション ===
   # 氏名の検証
@@ -13,16 +15,16 @@ class Customer < ApplicationRecord
   validates :name, length: { maximum: 100 }     # 最大100文字制限（DB制約とUI制約を兼ねる）
   validates :name, format: {
     with: /\A[\p{Hiragana}\p{Katakana}\p{Han}a-zA-Z\s]+\z/, # ひらがな・カタカナ・漢字・英字・スペースのみ
-    message: "は全角ひらがな、カタカナ、漢字、英字のみ使用できます"
+    message: 'は全角ひらがな、カタカナ、漢字、英字のみ使用できます'
   }
   # 顧客タイプの検証
-  validates :customer_type, presence: true  # 必須項目：顧客分類は必ず設定
+  validates :customer_type, presence: true # 必須項目：顧客分類は必ず設定
   validates :customer_type, inclusion: {
-    in: %w[regular premium corporate],       # 指定値のみ許可（セキュリティ対策）
-    message: "%{value} は有効な顧客タイプではありません"
+    in: %w[regular premium corporate], # 指定値のみ許可（セキュリティ対策）
+    message: '%<value>s は有効な顧客タイプではありません'
   }
   # ステータスの検証
-  validates :status, presence:true    # 必須項目：ステータスは必ず設定
+  validates :status, presence: true # 必須項目：ステータスは必ず設定
 
   # === enum定義（数値→文字列マッピング） ===
 
@@ -69,12 +71,12 @@ class Customer < ApplicationRecord
 
   # VIP顧客判定
   def vip?
-    customer_type == 'premium' || customer_type == 'corporate'
+    %w[premium corporate].include?(customer_type)
   end
 
   # 最近の活動があるか判定（30日以内に作業記録がある）
   def recently_active?
-    work_records.where(created_at: 30.days.ago..Time.current).exists?
+    work_records.exists?(created_at: 30.days.ago..Time.current)
   end
 
   # 担当スタッフ数の取得
@@ -97,7 +99,8 @@ class Customer < ApplicationRecord
   # 名前での部分一致検索
   def self.search_by_name(query)
     return all if query.blank?
-    where("name LIKE ?", "%#{query}%")  # PostgreSQL用：大文字小文字を区別しない部分一致
+
+    where('name LIKE ?', "%#{query}%") # PostgreSQL用：大文字小文字を区別しない部分一致
   end
 
   # === コールバック（自動実行される処理） ===

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Validatable
   extend ActiveSupport::Concern
 
@@ -19,64 +21,6 @@ module Validatable
 
     def validate_attribute_is_managed!(attribute_name)
       ConfigurationManager.validate_attribute_managed!(model_name_for_validation, attribute_name)
-    end
-
-    # === 共通バリデーション処理メソッド ===
-
-    # 属性に対する共通バリデーション前処理
-    # @param attribute [Symbol] 属性名
-    # @param message_key [Symbol] メッセージキー
-    # @return [Hash] display_name と message を含むハッシュ
-    private def prepare_validation_for_attribute(attribute, message_key, interpolations = {})
-      validate_attribute_is_managed!(attribute)
-      {
-        display_name: get_display_name_for_attribute(attribute),
-        message: get_validation_message(message_key, interpolations)
-      }
-    end
-
-    # 複数属性に対するフォーマットバリデーション共通処理
-    # @param attributes [Array<Symbol>] 属性名配列
-    # @param message_key [Symbol] メッセージキー
-    # @param regex_pattern [Regexp] 正規表現パターン
-    # @param options [Hash] バリデーションオプション
-    private def validates_format_for_attributes(attributes, message_key, regex_pattern, **options)
-      attributes.each do |attribute|
-        validation_data = prepare_validation_for_attribute(attribute, message_key)
-
-        validates attribute, format: {
-          with: regex_pattern,
-          message: "#{validation_data[:display_name]}#{validation_data[:message]}"
-        }.merge(options)
-      end
-    end
-
-    # 複数属性に対するプレゼンスバリデーション共通処理
-    # @param attributes [Array<Symbol>] 属性名配列
-    # @param message_key [Symbol] メッセージキー
-    # @param options [Hash] バリデーションオプション
-    private def validates_presence_for_attributes(attributes, message_key, **options)
-      attributes.each do |attribute|
-        validation_data = prepare_validation_for_attribute(attribute, message_key)
-
-        validates attribute, presence: {
-          message: "#{validation_data[:display_name]}#{validation_data[:message]}"
-        }.merge(options)
-      end
-    end
-
-    # 複数属性に対するユニークネスバリデーション共通処理
-    # @param attributes [Array<Symbol>] 属性名配列
-    # @param message_key [Symbol] メッセージキー
-    # @param options [Hash] バリデーションオプション
-    private def validates_uniqueness_for_attributes(attributes, message_key, **options)
-      attributes.each do |attribute|
-        validation_data = prepare_validation_for_attribute(attribute, message_key)
-
-        validates attribute, uniqueness: {
-          message: "#{validation_data[:display_name]}#{validation_data[:message]}"
-        }.merge(options)
-      end
     end
 
     # === 正規表現ベースのバリデーションメソッド ===
@@ -142,10 +86,70 @@ module Validatable
       end
       if min
         length_options[:minimum] = min
-        length_options[:too_short] = "#{validation_data[:display_name]}#{get_validation_message(:too_short, count: min)}"
+        length_options[:too_short] =
+          "#{validation_data[:display_name]}#{get_validation_message(:too_short, count: min)}"
       end
 
       validates attribute, length: length_options.merge(options)
     end
+  end
+
+  private
+
+  # 複数属性に対するユニークネスバリデーション共通処理
+  # @param attributes [Array<Symbol>] 属性名配列
+  # @param message_key [Symbol] メッセージキー
+  # @param options [Hash] バリデーションオプション
+  def validates_uniqueness_for_attributes(attributes, message_key, **options)
+    attributes.each do |attribute|
+      validation_data = prepare_validation_for_attribute(attribute, message_key)
+
+      validates attribute, uniqueness: {
+        message: "#{validation_data[:display_name]}#{validation_data[:message]}"
+      }.merge(options)
+    end
+  end
+
+  # 複数属性に対するプレゼンスバリデーション共通処理
+  # @param attributes [Array<Symbol>] 属性名配列
+  # @param message_key [Symbol] メッセージキー
+  # @param options [Hash] バリデーションオプション
+  def validates_presence_for_attributes(attributes, message_key, **options)
+    attributes.each do |attribute|
+      validation_data = prepare_validation_for_attribute(attribute, message_key)
+
+      validates attribute, presence: {
+        message: "#{validation_data[:display_name]}#{validation_data[:message]}"
+      }.merge(options)
+    end
+  end
+
+  # 複数属性に対するフォーマットバリデーション共通処理
+  # @param attributes [Array<Symbol>] 属性名配列
+  # @param message_key [Symbol] メッセージキー
+  # @param regex_pattern [Regexp] 正規表現パターン
+  # @param options [Hash] バリデーションオプション
+  def validates_format_for_attributes(attributes, message_key, regex_pattern, **options)
+    attributes.each do |attribute|
+      validation_data = prepare_validation_for_attribute(attribute, message_key)
+
+      validates attribute, format: {
+        with: regex_pattern,
+        message: "#{validation_data[:display_name]}#{validation_data[:message]}"
+      }.merge(options)
+    end
+  end
+
+  # === 共通バリデーション処理メソッド ===
+  # 属性に対する共通バリデーション前処理
+  # @param attribute [Symbol] 属性名
+  # @param message_key [Symbol] メッセージキー
+  # @return [Hash] display_name と message を含むハッシュ
+  def prepare_validation_for_attribute(attribute, message_key, interpolations = {})
+    validate_attribute_is_managed!(attribute)
+    {
+      display_name: get_display_name_for_attribute(attribute),
+      message: get_validation_message(message_key, interpolations)
+    }
   end
 end

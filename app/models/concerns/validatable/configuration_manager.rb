@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Validatable
   class ConfigurationManager
     class << self
@@ -16,9 +18,9 @@ module Validatable
 
       # 属性が管理対象かどうかをチェックし、管理外の場合は例外を発生させる
       def validate_attribute_managed!(model_name, attribute_name)
-        unless attribute_managed?(model_name, attribute_name)
-          raise AttributeNotManagedError.new(model_name, attribute_name)
-        end
+        return if attribute_managed?(model_name, attribute_name)
+
+        raise AttributeNotManagedError.new(model_name, attribute_name)
       end
 
       # 属性が管理対象かどうかをチェックする
@@ -41,21 +43,21 @@ module Validatable
 
       # 利用可能なモデル設定ファイル一覧を取得する
       def available_models
-        Dir.glob(Rails.root.join('config', 'validations', '*.yml'))
-           .map { |path| File.basename(path, '.yml') }
-           .sort
+        Rails.root.glob('config/validations/*.yml')
+             .map { |path| File.basename(path, '.yml') }
+             .sort
       end
 
       # 全モデルの設定を一覧表示する（デバッグ用）
       def list_all_configurations
-        puts "=== モデル設定一覧 ==="
+        Rails.logger.debug '=== モデル設定一覧 ==='
         available_models.each do |model_name|
-          puts "#{model_name.classify}:"
+          Rails.logger.debug { "#{model_name.classify}:" }
           managed_attributes(model_name).each do |attr_name|
             display_name = get_display_name(model_name, attr_name)
-            puts "  #{attr_name.ljust(20)}: \"#{display_name}\""
+            Rails.logger.debug { "  #{attr_name.ljust(20)}: \"#{display_name}\"" }
           end
-          puts ""
+          Rails.logger.debug ''
         end
       end
 
@@ -78,7 +80,7 @@ module Validatable
 
         begin
           YAML.load_file(config_file) || {}
-        rescue => e
+        rescue StandardError => e
           Rails.logger.error "設定ファイル読み込み失敗: #{config_file} - #{e.message}"
           {}
         end
@@ -108,9 +110,7 @@ module Validatable
 
           # 類似属性の提案
           similar_attr = find_similar_attribute(available_attrs)
-          if similar_attr
-            message += "もしかして ':#{similar_attr}' ですか？"
-          end
+          message += "もしかして ':#{similar_attr}' ですか？" if similar_attr
         else
           message += "現在、#{@model_name}モデルには管理対象属性がありません。"
         end

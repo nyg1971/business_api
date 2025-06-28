@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Department < ApplicationRecord
   include Validatable
   # === アソシエーション ===
@@ -12,12 +14,12 @@ class Department < ApplicationRecord
 
   # === バリデーション（データの整合性チェック） ===
   # 部署名
-  validates_required :name                      # 必須バリデーション
-  validates_length_with_message :name, max: 100   # 文字数制限バリデーション
+  validates_required :name # 必須バリデーション
+  validates_length_with_message :name, max: 100 # 文字数制限バリデーション
   validates_unique :name                        # 一意性バリデーション
   validates_japanese_name :name                 # 日本語名バリデーション
   # 所在地
-  validates_length_with_message :address, max: 500      # address は任意項目だが、入力時は文字数制限
+  validates_length_with_message :address, max: 500 # address は任意項目だが、入力時は文字数制限
   validates_japanese_name :address, allow_blank: true # allow_blank: 空白時はバリデーションスキップ（任意項目対応）
 
   enum :status, {
@@ -32,7 +34,7 @@ class Department < ApplicationRecord
     engineering: 1,     # 技術部
     administration: 2,  # 管理部
     support: 3,         # サポート部
-    other: 4           # その他
+    other: 4 # その他
   }, prefix: :type
   # prefix: true → type_sales? のようなメソッド名に
 
@@ -52,7 +54,7 @@ class Department < ApplicationRecord
   scope :with_customers, -> { joins(:customers).distinct }
   # 担当顧客がいる部署のみ
 
-  scope :by_name, ->(name) { where("name ILIKE ?", "%#{name}%") }
+  scope :by_name, ->(name) { where('name ILIKE ?', "%#{name}%") }
   # 部署名での部分一致検索（大文字小文字区別なし）
 
   scope :recent, -> { where('created_at > ?', 1.month.ago) }
@@ -142,11 +144,11 @@ class Department < ApplicationRecord
   end
 
   def check_dependencies
-    unless can_be_deleted?
-      errors.add(:base, "所属ユーザーまたは担当顧客が存在するため削除できません")
-      throw :abort
-      # 依存関係がある場合は削除を中止
-    end
+    return if can_be_deleted?
+
+    errors.add(:base, '所属ユーザーまたは担当顧客が存在するため削除できません')
+    throw :abort
+    # 依存関係がある場合は削除を中止
   end
 
   def department_type_i18n
