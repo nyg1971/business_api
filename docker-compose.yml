@@ -18,6 +18,19 @@ services:
     ports:
       - "6379:6379"
 
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: business_api_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "8080:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
   app:
     build: .
     container_name: business_api_app
@@ -36,3 +49,4 @@ services:
 volumes:
   postgres_data:
   bundle_cache:
+  pgadmin_data:

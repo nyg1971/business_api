@@ -3,6 +3,8 @@
 class User < ApplicationRecord
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
+  has_many :work_records, foreign_key: 'staff_user_id', dependent: :destroy
+  has_many :assigned_customers, through: :work_records, source: :customer
 
   # Deviseモジュールの設定（認証機能）
   devise :database_authenticatable, # DB認証（email/password）
