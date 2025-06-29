@@ -284,17 +284,19 @@ class WorkRecord < ApplicationRecord
     # @example
     #   WorkRecord.efficiency_by_department
     def efficiency_by_department
-      joins(:department)
-        .group('departments.name')
-        .group(:status)
-        .count
-        .each_with_object({}) do |(key, count), result|
+      grouped_data = joins(:department)
+                     .group('departments.name')
+                     .group(:status)
+                     .count
+
+      dept_summary = grouped_data.each_with_object({}) do |(key, count), result|
         dept_name, status = key
         result[dept_name] ||= { total: 0, completed: 0 }
         result[dept_name][:total] += count
         result[dept_name][:completed] += count if status == 'completed'
       end
-        .map do |dept_name, data|
+
+      dept_efficiency = dept_summary.map do |dept_name, data|
         completion_rate = (data[:completed].to_f / data[:total] * 100).round(2)
         {
           department: dept_name,
@@ -303,7 +305,8 @@ class WorkRecord < ApplicationRecord
           completion_rate: completion_rate
         }
       end
-        .sort_by { |dept| -dept[:completion_rate] }
+
+      dept_efficiency.sort_by { |dept| -dept[:completion_rate] }
     end
   end
 

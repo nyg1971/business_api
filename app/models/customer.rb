@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class Customer < ApplicationRecord
+  include Validatable
   # 担当スタッフ一覧（WorkRecord経由でUser取得）
   # @!attribute [r] assigned_users
   #   @return [ActiveRecord::Relation<User>]
@@ -11,20 +12,17 @@ class Customer < ApplicationRecord
 
   # === バリデーション ===
   # 氏名の検証
-  validates :name, presence: true               # 必須項目：空文字・nil禁止
-  validates :name, length: { maximum: 100 }     # 最大100文字制限（DB制約とUI制約を兼ねる）
-  validates :name, format: {
-    with: /\A[\p{Hiragana}\p{Katakana}\p{Han}a-zA-Z\s]+\z/, # ひらがな・カタカナ・漢字・英字・スペースのみ
-    message: 'は全角ひらがな、カタカナ、漢字、英字のみ使用できます'
-  }
+  validates_required :name # 必須項目：空文字・nil禁止
+  validates_length_with_message :name, maximum: 100 # 最大100文字制限（DB制約とUI制約を兼ねる）
+  validates_japanese_name :name
+
   # 顧客タイプの検証
-  validates :customer_type, presence: true # 必須項目：顧客分類は必ず設定
-  validates :customer_type, inclusion: {
-    in: %w[regular premium corporate], # 指定値のみ許可（セキュリティ対策）
-    message: '%<value>s は有効な顧客タイプではありません'
-  }
+  validates_required :customer_type # 必須項目：顧客分類は必ず設定
+  validates_enum_inclusion :customer_type # 指定値のみ許可（セキュリティ対策）
+
   # ステータスの検証
-  validates :status, presence: true # 必須項目：ステータスは必ず設定
+  validates_required :status # 必須項目：ステータスは必ず設定
+  validates_enum_inclusion :status
 
   # === enum定義（数値→文字列マッピング） ===
 

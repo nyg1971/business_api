@@ -93,6 +93,29 @@ module Validatable
       validates attribute, length: length_options.merge(options)
     end
 
+    # 選択肢バリデーション（基盤版）
+    def validates_inclusion(*attributes, **options)
+      choice_list = options.delete(:in)
+      validates_inclusion_for_attributes(attributes, :inclusion, choices: choice_list, **options)
+    end
+
+    # 選択肢バリデーション(enum)
+    def validates_enum_inclusion(*attributes, **options)
+      attributes.each do |attribute|
+        # 先に管理チェックを実行
+        validate_attribute_is_managed!(attribute)
+
+        enum_values = get_enum_values_for_attribute(attribute)
+        display_name = get_display_name_for_attribute(attribute)
+        choices_text = enum_values.join('、')
+
+        validates attribute, inclusion: {
+          in: enum_values,
+          message: "#{display_name}は有効な値ではありません（選択肢: #{choices_text}）"
+        }.merge(options)
+      end
+    end
+
     private
 
     # 複数属性に対するユニークネスバリデーション共通処理
@@ -150,6 +173,39 @@ module Validatable
         display_name: get_display_name_for_attribute(attribute),
         message: get_validation_message(message_key, interpolations)
       }
+    end
+
+    # 複数属性に対するinclusionバリデーション共通処理
+    # @param attributes [Array<Symbol>] バリデーション対象の属性名配列
+    # @param message_key [Symbol] メッセージキー（統一システム用、現在は:inclusionを使用）
+    # @param choices [Array, Range] 許可される値の配列または範囲
+    # @param options [Hash] Rails標準のvalidatesオプション
+    # @return [void]
+    # @raise [Validatable::ConfigurationManager::AttributeNotManagedError] 属性が設定ファイルで管理されていない場合
+    def validates_inclusion_for_attributes(attributes, _message_key, choices:, **options)
+      attributes.each do |attribute|
+        validate_attribute_is_managed!(attribute)
+        display_name = get_display_name_for_attribute(attribute)
+        choices_text = choices.is_a?(Array) ? choices.join('、') : choices.to_s
+
+        validates attribute, inclusion: {
+          in: choices,
+          message: "#{display_name}は有効な値ではありません（選択肢: #{choices_text}）"
+        }.merge(options)
+      end
+    end
+
+    # 属性に対応するenum値を取得
+    def get_enum_values_for_attribute(attribute)
+      # 一時的にハードコードで解決
+      case attribute.to_s
+      when 'customer_type'
+        return %w[regular premium corporate]
+      when 'status'
+        return %w[active inactive pending]
+      end
+
+      raise ArgumentError, "#{attribute} はenumとして定義されていません。モデル: #{name}"
     end
   end
 end

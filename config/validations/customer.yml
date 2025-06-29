@@ -37,3 +37,23 @@ customer:
     max_length: 100
     help_text: "所属会社名（個人の場合は空白）"
     placeholder: "例：株式会社サンプル"
+
+  customer_type:
+    display_name: "顧客タイプ"
+    type: "enum_inclusion"
+    required: true
+    help_text: "顧客の分類を選択してください"
+    choices_display:
+      regular: "一般顧客"
+      premium: "プレミアム顧客"
+      corporate: "法人顧客"
+
+  status:
+    display_name: "ステータス"
+    type: "enum_inclusion"
+    required: true
+    help_text: "顧客の現在の状態"
+    choices_display:
+      active: "アクティブ"
+      inactive: "非アクティブ"
+      pending: "保留中"
