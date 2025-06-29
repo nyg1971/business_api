@@ -2,7 +2,9 @@
 
 class AddStatusAndDepartmentTypeToDepartments < ActiveRecord::Migration[7.2]
   def change
-    add_column :departments, :status, :integer
-    add_column :departments, :department_type, :integer
+    change_table :departments, bulk: true do |t|
+      t.integer :status
+      t.integer :department_type
+    end
   end
 end

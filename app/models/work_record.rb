@@ -12,7 +12,7 @@ class WorkRecord < ApplicationRecord
   belongs_to :customer
 
   # 作業担当スタッフとの一対多関係（Userモデルを参照）
-  belongs_to :staff_user, class_name: 'User'
+  belongs_to :staff_user, class_name: 'User', inverse_of: :work_records
 
   # 所属部署との一対多関係
   belongs_to :department
