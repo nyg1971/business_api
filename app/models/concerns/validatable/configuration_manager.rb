@@ -41,6 +41,22 @@ module Validatable
         load_model_config(model_name)
       end
 
+      # モデル名と属性名からenum値とその表示名のハッシュを取得する
+      def get_choice_display_names(model_name, attribute_name)
+        config = load_model_config(model_name)
+        attribute_config = config.dig(model_name.to_s, attribute_name.to_s)
+
+        if attribute_config && attribute_config['choices_display']
+          attribute_config['choices_display']
+        else
+          Rails.logger.warn "choices_display設定が見つかりません: #{model_name}##{attribute_name}"
+          {}
+        end
+      rescue StandardError => e
+        Rails.logger.error "choices_display取得失敗: #{model_name}##{attribute_name} - #{e.message}"
+        {}
+      end
+
       # 利用可能なモデル設定ファイル一覧を取得する
       def available_models
         Rails.root.glob('config/validations/*.yml')
