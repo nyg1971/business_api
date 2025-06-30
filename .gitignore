@@ -31,3 +31,11 @@
 
 # Ignore master key for decrypting credentials and more.
 /config/master.key
+.idea/
+
+# Ignore Claude Code configuration file
+CLAUDE.md
+
+# Ignore macOS system files
+.DS_Store
+*/.DS_Store
