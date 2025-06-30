@@ -17,8 +17,8 @@ Rails.application.routes.draw do
       # 認証必須
       get 'auth/me', to: 'auth#me'
 
-      # 今後追加予定のAPIルート
-      # resources :customers
+      # リソース系APIルート
+      resources :customers, only: %i[index create show]
       # resources :work_records
     end
   end
